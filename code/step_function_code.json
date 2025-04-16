@@ -9,11 +9,11 @@
         "JobName": "process_data",
         "Arguments": {
           "--JOB_NAME": "process_data",
-          "--S3_BUCKET_PATH": "s3://lakehouse-bucket-zuki/bronze_layer/",
-          "--ORDER_ITEMS_OUTPUT_PATH": "s3://lakehouse-bucket-zuki/silver_layer/order_items",
-          "--ORDERS_OUTPUT_PATH": "s3://lakehouse-bucket-zuki/silver_layer/orders",
-          "--PRODUCTS_OUTPUT_PATH": "s3://lakehouse-bucket-zuki/silver_layer/products",
-          "--REJECTED_PATH": "s3://lakehouse-bucket-zuki/rejected"
+          "--S3_BUCKET_PATH": "s3://your-bucket/bronze_layer/",
+          "--ORDER_ITEMS_OUTPUT_PATH": "s3://your-bucket/silver_layer/order_items",
+          "--ORDERS_OUTPUT_PATH": "s3://your-bucket/silver_layer/orders",
+          "--PRODUCTS_OUTPUT_PATH": "s3://your-bucket/silver_layer/products",
+          "--REJECTED_PATH": "s3://your-bucket/rejected"
         }
       },
       "Next": "StartCrawler",
@@ -77,7 +77,7 @@
                   "Database": "project-6"
                 },
                 "ResultConfiguration": {
-                  "OutputLocation": "s3://lakehouse-bucket-zuki/output/"
+                  "OutputLocation": "s3://your-bucket/output/"
                 }
               },
               "End": true
@@ -96,7 +96,7 @@
                   "Database": "project-6"
                 },
                 "ResultConfiguration": {
-                  "OutputLocation": "s3://lakehouse-bucket-zuki/output/"
+                  "OutputLocation": "s3://your-bucket/output/"
                 }
               },
               "End": true
@@ -115,7 +115,7 @@
                   "Database": "project-6"
                 },
                 "ResultConfiguration": {
-                  "OutputLocation": "s3://lakehouse-bucket-zuki/output/"
+                  "OutputLocation": "s3://your-bucket/output/"
                 }
               },
               "End": true
@@ -126,9 +126,9 @@
     },
     "Archive Files": {
       "Type": "Task",
-      "Resource": "arn:aws:lambda:eu-west-1:448049788660:function:archive_on_success:$LATEST",
+      "Resource": "arn:aws:lambda:your-region:123456:function:archive_on_success:$LATEST",
       "Parameters": {
-        "bucket_name": "lakehouse-bucket-zuki",
+        "bucket_name": "your-bucket",
         "prefix": "bronze_layer/"
       },
       "Retry": [
@@ -151,7 +151,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish",
       "Parameters": {
-        "TopicArn": "arn:aws:sns:eu-west-1:448049788660:ecommerce-pipeline-alerts",
+        "TopicArn": "arn:aws:sns:your-region:123456:topic-name",
         "Message": {
           "Status": "Failed ❌",
           "Machine": "Lakehouse-StateMachine",
@@ -166,7 +166,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish",
       "Parameters": {
-        "TopicArn": "arn:aws:sns:eu-west-1:448049788660:ecommerce-pipeline-alerts",
+        "TopicArn": "arn:aws:sns:your-region:123456:topic-name",
         "Message": {
           "Status": "SUCCESS ✅",
           "Machine": "Lakehouse-StateMachine",
