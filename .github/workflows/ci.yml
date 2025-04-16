@@ -2,54 +2,54 @@ name: Delta Lake ETL Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-    
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest pytest-cov
-        pip install pyspark==3.3.0 delta-spark==2.2.0
-    
-    - name: Ensure package structure
-      run: |
-        # Create __init__.py files to make the directories packages
-        mkdir -p scripts/glue tests
-        touch scripts/__init__.py
-        touch scripts/glue/__init__.py
-        touch tests/__init__.py
-    
-    - name: Run tests
-      run: |
-        # Update import path in test file if needed
-        sed -i 's/from glue_delta_processor import/from scripts.glue.glue_delta_processor import/g' tests/test_delta_processor.py
-        pytest tests/test_delta_processor.py -v --cov=scripts/glue
-    
-    - name: Generate coverage report
-      run: |
-        pytest --cov=scripts/glue --cov-report=xml
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: "11"
+          distribution: "temurin"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+          pip install pyspark==3.3.0 delta-spark==2.2.0
+
+      - name: Ensure package structure
+        run: |
+          # Create __init__.py files to make the directories packages
+          mkdir -p scripts/glue tests
+          touch scripts/__init__.py
+          touch scripts/glue/__init__.py
+          touch tests/__init__.py
+
+      - name: Run tests
+        run: |
+          # Update import path in test file if needed
+          sed -i 's/from glue_delta_processor import/from scripts.glue.glue_delta_processor import/g' tests/test_delta_processor.py
+          PYTHONPATH=. pytest tests/test_delta_processor.py -v --cov=scripts/glue
+
+      - name: Generate coverage report
+        run: |
+          pytest --cov=scripts/glue --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
