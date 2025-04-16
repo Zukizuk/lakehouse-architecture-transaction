@@ -42,7 +42,7 @@ jobs:
         run: |
           # Update import path in test file if needed
           sed -i 's/from glue_delta_processor import/from scripts.glue.glue_delta_processor import/g' tests/test_delta_processor.py
-          PYTHONPATH=. pytest tests/test_delta_processor.py -v --cov=scripts/glue
+          pytest tests/test_delta_processor.py -v --cov=scripts/glue
 
       - name: Generate coverage report
         run: |
