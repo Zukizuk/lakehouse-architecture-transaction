@@ -101,3 +101,4 @@ def process_dataset(raw_df: DataFrame, schema: StructType, schema_name: str, out
     except Exception as e:
         log(f"Error processing {schema_name} dataset: {str(e)}", "ERROR")
         raise e
+
