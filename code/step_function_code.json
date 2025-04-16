@@ -1,0 +1,181 @@
+{
+  "Comment": "Lakehouse Architecture for E-Commerce Transactions",
+  "StartAt": "Glue StartJobRun",
+  "States": {
+    "Glue StartJobRun": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "process_data",
+        "Arguments": {
+          "--JOB_NAME": "process_data",
+          "--S3_BUCKET_PATH": "s3://lakehouse-bucket-zuki/bronze_layer/",
+          "--ORDER_ITEMS_OUTPUT_PATH": "s3://lakehouse-bucket-zuki/silver_layer/order_items",
+          "--ORDERS_OUTPUT_PATH": "s3://lakehouse-bucket-zuki/silver_layer/orders",
+          "--PRODUCTS_OUTPUT_PATH": "s3://lakehouse-bucket-zuki/silver_layer/products",
+          "--REJECTED_PATH": "s3://lakehouse-bucket-zuki/rejected"
+        }
+      },
+      "Next": "StartCrawler",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "Failed Message"
+        }
+      ]
+    },
+    "StartCrawler": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:glue:startCrawler",
+      "Parameters": {
+        "Name": "project-6-crawler"
+      },
+      "Next": "WaitForCrawler"
+    },
+    "WaitForCrawler": {
+      "Type": "Wait",
+      "Seconds": 35,
+      "Next": "CheckCrawlerStatus"
+    },
+    "CheckCrawlerStatus": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:glue:getCrawler",
+      "Parameters": {
+        "Name": "project-6-crawler"
+      },
+      "Next": "IsCrawlingComplete"
+    },
+    "IsCrawlingComplete": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Crawler.State",
+          "StringEquals": "READY",
+          "Next": "Parallel"
+        },
+        {
+          "Variable": "$.Crawler.State",
+          "StringEquals": "STOPPING",
+          "Next": "Parallel"
+        }
+      ],
+      "Default": "WaitForCrawler"
+    },
+    "Parallel": {
+      "Type": "Parallel",
+      "Next": "Archive Files",
+      "Branches": [
+        {
+          "StartAt": "RunTestQueriesOrders",
+          "States": {
+            "RunTestQueriesOrders": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::aws-sdk:athena:startQueryExecution",
+              "Parameters": {
+                "QueryString": "SELECT * FROM orders LIMIT 10",
+                "QueryExecutionContext": {
+                  "Database": "project-6"
+                },
+                "ResultConfiguration": {
+                  "OutputLocation": "s3://lakehouse-bucket-zuki/output/"
+                }
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "RunTestQueriesOrderItems",
+          "States": {
+            "RunTestQueriesOrderItems": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::aws-sdk:athena:startQueryExecution",
+              "Parameters": {
+                "QueryString": "SELECT * FROM order_items LIMIT 10",
+                "QueryExecutionContext": {
+                  "Database": "project-6"
+                },
+                "ResultConfiguration": {
+                  "OutputLocation": "s3://lakehouse-bucket-zuki/output/"
+                }
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "RunTestQueriesProducts",
+          "States": {
+            "RunTestQueriesProducts": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::aws-sdk:athena:startQueryExecution",
+              "Parameters": {
+                "QueryString": "SELECT * FROM products LIMIT 10",
+                "QueryExecutionContext": {
+                  "Database": "project-6"
+                },
+                "ResultConfiguration": {
+                  "OutputLocation": "s3://lakehouse-bucket-zuki/output/"
+                }
+              },
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "Archive Files": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:448049788660:function:archive_on_success:$LATEST",
+      "Parameters": {
+        "bucket_name": "lakehouse-bucket-zuki",
+        "prefix": "bronze_layer/"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Succeed Message"
+    },
+    "Failed Message": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "arn:aws:sns:eu-west-1:448049788660:ecommerce-pipeline-alerts",
+        "Message": {
+          "Status": "Failed ❌",
+          "Machine": "Lakehouse-StateMachine",
+          "ExecutionId.$": "$$.Execution.Id",
+          "Timestamp.$": "$$.State.EnteredTime"
+        },
+        "Subject": "State Machine Execution Failed ❌"
+      },
+      "End": true
+    },
+    "Succeed Message": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "arn:aws:sns:eu-west-1:448049788660:ecommerce-pipeline-alerts",
+        "Message": {
+          "Status": "SUCCESS ✅",
+          "Machine": "Lakehouse-StateMachine",
+          "ExecutionId.$": "$$.Execution.Id",
+          "Timestamp.$": "$$.State.EnteredTime"
+        },
+        "Subject": "State Machine Execution Succeeded ✅"
+      },
+      "End": true
+    }
+  }
+}
