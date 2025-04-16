@@ -6,7 +6,6 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType, DoubleType, DateType
 from pyspark.sql.functions import col
 import datetime
-from tests.mock_modules import mock_modules
 
 
 # Import the functions to test
