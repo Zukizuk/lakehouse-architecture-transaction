@@ -3,6 +3,7 @@ from datetime import datetime, date
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType, DoubleType, DateType
 from functions import validate_data, process_dataset
+from pyspark.sql import Row
 
 @pytest.fixture(scope="module")
 def spark():
@@ -46,27 +47,20 @@ def products_schema():
         StructField("product_name", StringType(), nullable=False)
     ])
 
-# def test_validate_data_order_items(spark):
-#     # Convert string timestamps and dates to proper Python types
-#     timestamp = datetime.strptime("2025-04-16 12:00:00", "%Y-%m-%d %H:%M:%S")
-#     dt = date(2025, 4, 16)
-    
-#     # Use a simpler approach: first create with column names, then use validate_data
-#     data = [
-#         (1, 100, 1, None, 200, 1, 0, timestamp, dt),
-#         (2, None, 1, None, 201, 2, 0, timestamp, dt),
-#         (3, 101, 1, None, None, 3, 0, timestamp, dt)
-#     ]
-    
-#     columns = ["id", "order_id", "user_id", "days_since_prior_order", "product_id",
-#               "add_to_cart_order", "reordered", "order_timestamp", "date"]
-    
-#     df = spark.createDataFrame(data, columns)
-    
-#     valid_records, invalid_records = validate_data(df, "order_items")
-    
-#     assert valid_records.count() == 1
-#     assert invalid_records.count() == 2
+def test_validate_order_items_valid(spark_session):
+    ts1 = datetime(2023, 1, 10, 10, 0, 0)
+    d1 = date(2023, 1, 10)
+    valid_oi_data = [
+        Row(id=10001, order_id=501, user_id=1001, days_since_prior_order=5, product_id=101, add_to_cart_order=1, reordered=0, order_timestamp=ts1, date=d1),
+        Row(id=10002, order_id=501, user_id=1001, days_since_prior_order=5, product_id=102, add_to_cart_order=2, reordered=0, order_timestamp=ts1, date=d1)
+    ]
+    input_df = spark_session.createDataFrame(valid_oi_data, schema=order_items_schema)
+    mock_products_df = spark_session.createDataFrame([Row(product_id=101), Row(product_id=102)], schema=StructType([StructField("product_id", IntegerType())]))
+    mock_orders_df = spark_session.createDataFrame([Row(order_id=501)], schema=StructType([StructField("order_id", IntegerType())]))
+    reference_data = {"products": mock_products_df, "orders": mock_orders_df}
+    valid_records, invalid_records = validate_data(input_df, "order_items", reference_data=reference_data)
+    assert valid_records.count() == 2
+    assert invalid_records.count() == 0
 
 def test_process_dataset(spark, orders_schema):
     # Convert string timestamps and dates to proper Python types
