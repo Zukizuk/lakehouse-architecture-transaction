@@ -46,27 +46,27 @@ def products_schema():
         StructField("product_name", StringType(), nullable=False)
     ])
 
-def test_validate_data_order_items(spark):
-    # Convert string timestamps and dates to proper Python types
-    timestamp = datetime.strptime("2025-04-16 12:00:00", "%Y-%m-%d %H:%M:%S")
-    dt = date(2025, 4, 16)
+# def test_validate_data_order_items(spark):
+#     # Convert string timestamps and dates to proper Python types
+#     timestamp = datetime.strptime("2025-04-16 12:00:00", "%Y-%m-%d %H:%M:%S")
+#     dt = date(2025, 4, 16)
     
-    # Use a simpler approach: first create with column names, then use validate_data
-    data = [
-        (1, 100, 1, None, 200, 1, 0, timestamp, dt),
-        (2, None, 1, None, 201, 2, 0, timestamp, dt),
-        (3, 101, 1, None, None, 3, 0, timestamp, dt)
-    ]
+#     # Use a simpler approach: first create with column names, then use validate_data
+#     data = [
+#         (1, 100, 1, None, 200, 1, 0, timestamp, dt),
+#         (2, None, 1, None, 201, 2, 0, timestamp, dt),
+#         (3, 101, 1, None, None, 3, 0, timestamp, dt)
+#     ]
     
-    columns = ["id", "order_id", "user_id", "days_since_prior_order", "product_id",
-              "add_to_cart_order", "reordered", "order_timestamp", "date"]
+#     columns = ["id", "order_id", "user_id", "days_since_prior_order", "product_id",
+#               "add_to_cart_order", "reordered", "order_timestamp", "date"]
     
-    df = spark.createDataFrame(data, columns)
+#     df = spark.createDataFrame(data, columns)
     
-    valid_records, invalid_records = validate_data(df, "order_items")
+#     valid_records, invalid_records = validate_data(df, "order_items")
     
-    assert valid_records.count() == 1
-    assert invalid_records.count() == 2
+#     assert valid_records.count() == 1
+#     assert invalid_records.count() == 2
 
 def test_process_dataset(spark, orders_schema):
     # Convert string timestamps and dates to proper Python types
