@@ -16,10 +16,10 @@ def spark():
 def order_items_schema():
     return StructType([
         StructField("id", IntegerType(), nullable=False),
-        StructField("order_id", IntegerType(), nullable=False),
+        StructField("order_id", IntegerType(), nullable=True),  # Changed to True to accept None
         StructField("user_id", IntegerType(), nullable=False),
         StructField("days_since_prior_order", IntegerType(), nullable=True),
-        StructField("product_id", IntegerType(), nullable=False),
+        StructField("product_id", IntegerType(), nullable=True),  # Changed to True to accept None
         StructField("add_to_cart_order", IntegerType(), nullable=True),
         StructField("reordered", IntegerType(), nullable=True),
         StructField("order_timestamp", TimestampType(), nullable=False),
@@ -46,18 +46,22 @@ def products_schema():
         StructField("product_name", StringType(), nullable=False)
     ])
 
-def test_validate_data_order_items(spark, order_items_schema):
+def test_validate_data_order_items(spark):
     # Convert string timestamps and dates to proper Python types
     timestamp = datetime.strptime("2025-04-16 12:00:00", "%Y-%m-%d %H:%M:%S")
     dt = date(2025, 4, 16)
     
+    # Use a simpler approach: first create with column names, then use validate_data
     data = [
         (1, 100, 1, None, 200, 1, 0, timestamp, dt),
         (2, None, 1, None, 201, 2, 0, timestamp, dt),
         (3, 101, 1, None, None, 3, 0, timestamp, dt)
     ]
     
-    df = spark.createDataFrame(data, schema=order_items_schema)
+    columns = ["id", "order_id", "user_id", "days_since_prior_order", "product_id",
+              "add_to_cart_order", "reordered", "order_timestamp", "date"]
+    
+    df = spark.createDataFrame(data, columns)
     
     valid_records, invalid_records = validate_data(df, "order_items")
     
