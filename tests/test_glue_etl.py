@@ -47,16 +47,16 @@ def products_schema():
         StructField("product_name", StringType(), nullable=False)
     ])
 
-def test_validate_order_items_valid(spark_session):
+def test_validate_order_items_valid(spark):
     ts1 = datetime(2023, 1, 10, 10, 0, 0)
     d1 = date(2023, 1, 10)
     valid_oi_data = [
         Row(id=10001, order_id=501, user_id=1001, days_since_prior_order=5, product_id=101, add_to_cart_order=1, reordered=0, order_timestamp=ts1, date=d1),
         Row(id=10002, order_id=501, user_id=1001, days_since_prior_order=5, product_id=102, add_to_cart_order=2, reordered=0, order_timestamp=ts1, date=d1)
     ]
-    input_df = spark_session.createDataFrame(valid_oi_data, schema=order_items_schema)
-    mock_products_df = spark_session.createDataFrame([Row(product_id=101), Row(product_id=102)], schema=StructType([StructField("product_id", IntegerType())]))
-    mock_orders_df = spark_session.createDataFrame([Row(order_id=501)], schema=StructType([StructField("order_id", IntegerType())]))
+    input_df = spark.createDataFrame(valid_oi_data, schema=order_items_schema)
+    mock_products_df = spark.createDataFrame([Row(product_id=101), Row(product_id=102)], schema=StructType([StructField("product_id", IntegerType())]))
+    mock_orders_df = spark.createDataFrame([Row(order_id=501)], schema=StructType([StructField("order_id", IntegerType())]))
     reference_data = {"products": mock_products_df, "orders": mock_orders_df}
     valid_records, invalid_records = validate_data(input_df, "order_items", reference_data=reference_data)
     assert valid_records.count() == 2
