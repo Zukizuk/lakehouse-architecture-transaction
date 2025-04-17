@@ -45,21 +45,21 @@ def products_schema():
         StructField("product_name", StringType(), nullable=False)
     ])
 
-def test_validate_data_order_items(spark):
+def test_validate_data_order_items(spark, order_items_schema):  # Add order_items_schema as a parameter
     data = [
         (1, 100, 1, None, 200, 1, 0, "2025-04-16 12:00:00", "2025-04-16"),
         (2, None, 1, None, 201, 2, 0, "2025-04-16 12:00:00", "2025-04-16"),
         (3, 101, 1, None, None, 3, 0, "2025-04-16 12:00:00", "2025-04-16")
     ]
-    columns = ["id", "order_id", "user_id", "days_since_prior_order", "product_id",
-                "add_to_cart_order", "reordered", "order_timestamp", "date"]
-    df = spark.createDataFrame(data, columns)
+    
+    # Create DataFrame with explicit schema instead of column names
+    df = spark.createDataFrame(data, schema=order_items_schema)
     
     valid_records, invalid_records = validate_data(df, "order_items")
     
     assert valid_records.count() == 1
     assert invalid_records.count() == 2
-
+    
 def test_process_dataset(spark, orders_schema):
     data = [
         (1, 100, 1, "2025-04-16 12:00:00", 10.0, "2025-04-16"),
