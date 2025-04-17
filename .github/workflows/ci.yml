@@ -16,14 +16,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Set up Java (required for Spark)
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin" # Or 'zulu', 'adopt'
+          java-version: "11" # Common version for Spark 3.x
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.8" # Specify the Python version you want to use
+          python-version: "3.9"
 
       - name: Install dependencies
         run: |
-          pip install pyspark
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # If you have additional dependencies
+          java -version # Verify Java setup
+          python --version # Verify Python setup
+          pip list # List installed packages
+
+      - name: Run Pytest Integration Tests
+        run: |
+          pytest tests/test_glue_etl.py -v # -v for verbose output
+        env:
+          PYSPARK_PYTHON: python # Ensure pytest uses the correct python
+          PYSPARK_DRIVER_PYTHON: python
+
+      - name: Install dependencies
+        run: |
           pip install -r requirements.txt  # If you have additional dependencies
 
       - name: Run unit tests
