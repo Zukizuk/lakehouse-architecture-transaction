@@ -41,11 +41,3 @@ jobs:
         env:
           PYSPARK_PYTHON: python # Ensure pytest uses the correct python
           PYSPARK_DRIVER_PYTHON: python
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt  # If you have additional dependencies
-
-      - name: Run unit tests
-        run: |
-          python -m unittest discover -s . -p "tests/test_delta_processor.py"

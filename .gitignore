@@ -2,3 +2,4 @@ _*
 .venv/
 __pycache__/
 myenv
+*.docx
