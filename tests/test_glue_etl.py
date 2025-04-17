@@ -47,7 +47,7 @@ def products_schema():
         StructField("product_name", StringType(), nullable=False)
     ])
 
-def test_validate_order_items_valid(spark):
+def test_validate_order_items_valid(spark, order_items_schema):
     ts1 = datetime(2023, 1, 10, 10, 0, 0)
     d1 = date(2023, 1, 10)
     valid_oi_data = [
