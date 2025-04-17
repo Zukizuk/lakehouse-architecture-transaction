@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime, date
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType, DoubleType, DateType
 from functions import validate_data, process_dataset
@@ -45,28 +46,35 @@ def products_schema():
         StructField("product_name", StringType(), nullable=False)
     ])
 
-def test_validate_data_order_items(spark, order_items_schema):  # Add order_items_schema as a parameter
+def test_validate_data_order_items(spark, order_items_schema):
+    # Convert string timestamps and dates to proper Python types
+    timestamp = datetime.strptime("2025-04-16 12:00:00", "%Y-%m-%d %H:%M:%S")
+    dt = date(2025, 4, 16)
+    
     data = [
-        (1, 100, 1, None, 200, 1, 0, "2025-04-16 12:00:00", "2025-04-16"),
-        (2, None, 1, None, 201, 2, 0, "2025-04-16 12:00:00", "2025-04-16"),
-        (3, 101, 1, None, None, 3, 0, "2025-04-16 12:00:00", "2025-04-16")
+        (1, 100, 1, None, 200, 1, 0, timestamp, dt),
+        (2, None, 1, None, 201, 2, 0, timestamp, dt),
+        (3, 101, 1, None, None, 3, 0, timestamp, dt)
     ]
     
-    # Create DataFrame with explicit schema instead of column names
     df = spark.createDataFrame(data, schema=order_items_schema)
     
     valid_records, invalid_records = validate_data(df, "order_items")
     
     assert valid_records.count() == 1
     assert invalid_records.count() == 2
-    
+
 def test_process_dataset(spark, orders_schema):
+    # Convert string timestamps and dates to proper Python types
+    timestamp = datetime.strptime("2025-04-16 12:00:00", "%Y-%m-%d %H:%M:%S")
+    dt = date(2025, 4, 16)
+    
     data = [
-        (1, 100, 1, "2025-04-16 12:00:00", 10.0, "2025-04-16"),
-        (2, 101, 1, "2025-04-16 12:00:00", -5.0, "2025-04-16")
+        (1, 100, 1, timestamp, 10.0, dt),
+        (2, 101, 1, timestamp, -5.0, dt)
     ]
-    columns = ["order_num", "order_id", "user_id", "order_timestamp", "total_amount", "date"]
-    df = spark.createDataFrame(data, columns)
+    
+    df = spark.createDataFrame(data, schema=orders_schema)
     
     valid_data, rejected_data = process_dataset(df, orders_schema, "orders", "dummy_output_path")
     
